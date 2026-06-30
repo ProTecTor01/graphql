@@ -5,7 +5,7 @@ export function renderXpLineChart(points) {
 
   const width = 720;
   const height = 280;
-  const padding = { top: 24, right: 28, bottom: 42, left: 72 };
+  const padding = { top: 24, right: 36, bottom: 42, left: 106 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   const maxY = Math.max(...points.map((point) => point.total), 1);
