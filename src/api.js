@@ -1,5 +1,5 @@
 import { OBJECT_CHUNK_SIZE, PROGRESS_LIMIT, RESULT_LIMIT, TRANSACTION_LIMIT } from "./config.js";
-import { DASHBOARD_QUERY, OBJECT_QUERY } from "./queries.js";
+import { DASHBOARD_QUERY, DASHBOARD_QUERY_WITH_EVENT_ID, OBJECT_QUERY } from "./queries.js";
 import { asArray, encodeBasic, extractJwt, extractServerMessage, getErrorMessage, toNumber } from "./utils.js";
 
 export async function signIn(apiBase, identifier, password) {
@@ -29,11 +29,19 @@ export async function signIn(apiBase, identifier, password) {
 }
 
 export async function loadDashboardData(apiBase, token) {
-  const data = await graphqlRequest(apiBase, token, DASHBOARD_QUERY, {
+  const variables = {
     txLimit: TRANSACTION_LIMIT,
     resultLimit: RESULT_LIMIT,
     progressLimit: PROGRESS_LIMIT,
-  });
+  };
+  let data;
+
+  try {
+    data = await graphqlRequest(apiBase, token, DASHBOARD_QUERY_WITH_EVENT_ID, variables);
+  } catch (error) {
+    if (!isUnsupportedEventIdError(error)) throw error;
+    data = await graphqlRequest(apiBase, token, DASHBOARD_QUERY, variables);
+  }
 
   let objects = [];
   let objectLookupError = "";
@@ -45,6 +53,10 @@ export async function loadDashboardData(apiBase, token) {
   }
 
   return { data, objects, objectLookupError };
+}
+
+function isUnsupportedEventIdError(error) {
+  return /eventId|field .*event/i.test(getErrorMessage(error));
 }
 
 export async function graphqlRequest(apiBase, token, query, variables = {}) {

@@ -27,6 +27,8 @@ https://your-host.example/?domain=https://another-campus-domain
 
 There is no production mock data. Mock responses were only used during local development to verify rendering without real credentials.
 
+When the API exposes `eventId` on XP transactions, the app calculates total XP from the main current event instead of summing every historical XP transaction on the account. This matches the way the platform usually displays profile XP.
+
 ## Features
 
 - Sign in with `username:password`.

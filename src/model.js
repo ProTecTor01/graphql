@@ -15,7 +15,9 @@ export function buildDashboardModel(data, objects, objectLookupError, jwtPayload
   const transactions = asArray(data.transaction).map(normalizeTransaction);
   const results = asArray(data.result).map(normalizeGradeRow);
   const progress = asArray(data.progress).map(normalizeGradeRow);
-  const xpTransactions = transactions.filter((item) => normalizeType(item.type) === "xp" && item.amount > 0);
+  const allXpTransactions = transactions.filter((item) => normalizeType(item.type) === "xp" && item.amount > 0);
+  const xpScope = getXpScope(allXpTransactions);
+  const xpTransactions = xpScope.transactions;
   const auditUp = transactions
     .filter((item) => normalizeType(item.type) === "up")
     .reduce((sum, item) => sum + Math.max(item.amount, 0), 0);
@@ -43,7 +45,10 @@ export function buildDashboardModel(data, objects, objectLookupError, jwtPayload
     progress,
     objectMap,
     objectLookupError,
+    allXpTransactions,
     xpTransactions,
+    xpScopeLabel: xpScope.label,
+    xpScopeEventId: xpScope.eventId,
     xpTimeline,
     xpByProject,
     recentXp,
@@ -133,8 +138,36 @@ function normalizeTransaction(item) {
     amount: toNumber(item.amount) || 0,
     objectId: toNumberOrNull(item.objectId),
     userId: toNumberOrNull(item.userId),
+    eventId: toNumberOrNull(item.eventId),
     createdAt: item.createdAt || "",
     path: item.path || "",
+  };
+}
+
+function getXpScope(xpTransactions) {
+  const transactionsWithEvent = xpTransactions.filter((item) => Number.isInteger(item.eventId));
+  const eventIds = new Set(transactionsWithEvent.map((item) => item.eventId));
+
+  if (eventIds.size <= 1) {
+    return {
+      eventId: eventIds.values().next().value ?? null,
+      label: "All XP",
+      transactions: xpTransactions,
+    };
+  }
+
+  const totalsByEvent = new Map();
+
+  transactionsWithEvent.forEach((item) => {
+    totalsByEvent.set(item.eventId, (totalsByEvent.get(item.eventId) || 0) + item.amount);
+  });
+
+  const [eventId] = [...totalsByEvent.entries()].sort((left, right) => right[1] - left[1])[0];
+
+  return {
+    eventId,
+    label: "Current event XP",
+    transactions: xpTransactions.filter((item) => item.eventId === eventId),
   };
 }
 

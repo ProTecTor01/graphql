@@ -112,7 +112,7 @@ function renderProfile(model) {
       <section class="dashboard-section" aria-labelledby="xp-title">
         <div class="section-heading">
           <h2 id="xp-title">XP</h2>
-          <p>${formatNumber(model.xpTransactions.length)} XP transactions</p>
+          <p>${escapeHtml(model.xpScopeLabel)} &middot; ${formatNumber(model.xpTransactions.length)} XP transactions</p>
         </div>
         <div class="metric-grid">
           ${renderMetric("Total XP", `${formatNumber(model.totalXp)} XP`)}
